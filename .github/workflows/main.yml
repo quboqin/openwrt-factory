@@ -112,6 +112,3 @@ jobs:
         with:
           name: OpenWrt_firmware${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
           path: ${{ env.FIRMWARE }}
-
-      - name: SSH connection to Actions
-        uses: quboqin/ssh2actions@main
