@@ -21,17 +21,11 @@ jobs:
         uses: actions/checkout@v3
 
       - name: init environment
-        run: |
-          sudo mkdir -p /workdir
-          sudo chown $USER:$GROUPS /workdir
 
       - name: clone source code
-        working-directory: /workdir
         run: |
           git clone $REPO_URL -b $REPO_BRANCH openwrt
-          ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt      
       
       - name: List files in the repository
         run: |
           ls ${{ github.workspace }}
-          ls /
