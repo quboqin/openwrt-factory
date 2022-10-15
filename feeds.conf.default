@@ -8,9 +8,3 @@ src-git telephony https://git.openwrt.org/feed/telephony.git
 #src-link custom /usr/src/openwrt/custom-feed
 src-git freifunk https://github.com/freifunk/openwrt-packages.git 
 src-git kenzo https://github.com/kenzok8/openwrt-packages
-#Openclash
-src-git Openclash https://github.com/vernesong/OpenClash
-#Passwall
-src-git PassWall https://github.com/xiaorouji/openwrt-passwall
-#HelloWorld
-src-git HelloWorld https://github.com/fw876/helloworld
