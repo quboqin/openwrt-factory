@@ -20,8 +20,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: init environment
-
       - name: clone source code
         run: |
           git clone $REPO_URL -b $REPO_BRANCH openwrt
