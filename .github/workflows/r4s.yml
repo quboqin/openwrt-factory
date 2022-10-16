@@ -1,0 +1,102 @@
+name: build openwrt for r4s
+run-name: ${{ github.actor }} is building an openwrt image for r4s platform 🚀
+on:
+  workflow_dispatch:
+    inputs:
+      ssh:
+        description: ""
+        required: false
+        default: false
+
+env:
+  REPO_URL: https://github.com/coolsnowwolf/lede.git
+  REPO_BRANCH: master
+  FEEDS_CONF: feeds.conf.default
+  ADD_FEED: add-feed.sh
+  UPDATE_IP: update-ip.sh
+  CONFIG_FILE: r4s.config
+  UPLOAD_FIRMWARE: true
+
+jobs:
+  build:
+    runs-on: ubuntu-18.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      
+      - name: init environment
+        run: |
+          sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          sudo -E apt-get -qq update
+          sudo -E apt-get -qq install $(curl -fsSL git.io/depends-ubuntu-1804)
+          sudo -E apt-get -qq autoremove --purge
+          sudo -E apt-get -qq clean
+
+      - name: clone source code
+        run: |
+          git clone $REPO_URL -b $REPO_BRANCH openwrt
+
+      - name: load custom feeds
+        run: |
+          [ -e $FEEDS_CONF ] && mv $FEEDS_CONF openwrt/feeds.conf.default
+          chmod +x $ADD_FEED
+          cd openwrt
+          ${{ github.workspace }}/$ADD_FEED
+
+      - name: load custom configuration
+        run: |
+          [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
+          chmod +x $UPDATE_IP
+          cd openwrt
+          ${{ github.workspace }}/$UPDATE_IP
+
+      - name: update feeds
+        run: cd openwrt && ./scripts/feeds update -a
+
+      - name: install feeds
+        run: cd openwrt && ./scripts/feeds install -a
+
+      - name: SSH connection to Actions
+        uses: quboqin/ssh2actions@main
+        if: (github.event.inputs.ssh == 'true' && github.event.inputs.ssh  != 'false') || contains(github.event.action, 'ssh')
+
+      - name: download package
+        id: package
+        run: |
+          cd openwrt
+          make defconfig
+          make download -j8
+          find dl -size -1024c -exec ls -l {} \;
+          find dl -size -1024c -exec rm -f {} \;
+
+      - name: compile the firmware
+        id: compile
+        run: |
+          cd openwrt
+          echo -e "$(nproc) thread compile"
+          make -j$(nproc) V=s
+          echo "COMPILE_STATUS=success" >> $GITHUB_ENV
+          grep '^CONFIG_TARGET.*DEVICE.*=y' .config | sed -r 's/.*DEVICE_(.*)=y/\1/' > DEVICE_NAME
+          [ -s DEVICE_NAME ] && echo "DEVICE_NAME=_$(cat DEVICE_NAME)" >> $GITHUB_ENV
+          echo "FILE_DATE=_$(date +"%Y%m%d%H%M")" >> $GITHUB_ENV
+
+      - name: check space usage
+        if: (!cancelled())
+        run: df -hT
+
+      - name: organize files
+        id: organize
+        if: env.UPLOAD_FIRMWARE == 'true' && !cancelled()
+        run: |
+          cd openwrt/bin/targets/*/*
+          rm -rf packages
+          echo "FIRMWARE=$PWD" >> $GITHUB_ENV
+          echo "ORGANIZE_STATUS=success" >> $GITHUB_ENV
+
+      - name: upload firmware directory
+        uses: actions/upload-artifact@main
+        if: env.COMPILE_STATUS == 'success' && env.ORGANIZE_STATUS == 'success' && !cancelled()
+        with:
+          name: OpenWrt_firmware${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
+          path: ${{ env.FIRMWARE }}
