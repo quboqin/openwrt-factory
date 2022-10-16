@@ -46,7 +46,6 @@ jobs:
 
       - name: load custom configuration
         run: |
-          [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
           chmod +x $UPDATE_IP
           cd openwrt
           ${{ github.workspace }}/$UPDATE_IP
@@ -56,6 +55,11 @@ jobs:
 
       - name: install feeds
         run: cd openwrt && ./scripts/feeds install -a
+
+      - name: install rtl8812bu driver
+        run: |
+          cd openwrt/package/kernel
+          git clone https://github.com/AutoCONFIG/RTL88x2BU-OpenWRT.git
 
       - name: SSH connection to Actions
         uses: quboqin/ssh2actions@main
