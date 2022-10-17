@@ -51,16 +51,16 @@ jobs:
           cd openwrt
           ${{ github.workspace }}/$UPDATE_IP
 
+      - name: install rtl8812bu driver
+        run: |
+          cd openwrt/package/kernel
+          git clone https://github.com/AutoCONFIG/RTL88x2BU-OpenWRT.git
+
       - name: update feeds
         run: cd openwrt && ./scripts/feeds update -a
 
       - name: install feeds
         run: cd openwrt && ./scripts/feeds install -a
-
-      - name: install rtl8812bu driver
-        run: |
-          cd openwrt/package/kernel
-          git clone https://github.com/AutoCONFIG/RTL88x2BU-OpenWRT.git
 
       - name: SSH connection to Actions
         uses: quboqin/ssh2actions@main
