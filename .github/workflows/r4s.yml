@@ -51,10 +51,10 @@ jobs:
           cd openwrt
           ${{ github.workspace }}/$UPDATE_IP
 
-      - name: install rtl8812bu driver
-        run: |
-          cd openwrt/package/kernel
-          git clone https://github.com/AutoCONFIG/RTL88x2BU-OpenWRT.git
+      # - name: install rtl8812bu driver
+      #   run: |
+      #     cd openwrt/package/kernel
+      #     git clone https://github.com/AutoCONFIG/RTL88x2BU-OpenWRT.git
 
       - name: update feeds
         run: cd openwrt && ./scripts/feeds update -a
@@ -64,7 +64,7 @@ jobs:
 
       - name: SSH connection to Actions
         uses: quboqin/ssh2actions@main
-        if: (github.event.inputs.ssh == 'true' && github.event.inputs.ssh  != 'false') || contains(github.event.action, 'ssh')
+        if: github.event.inputs.ssh == 'true'
 
       - name: download package
         id: package
@@ -80,7 +80,7 @@ jobs:
         run: |
           cd openwrt
           echo -e "$(nproc) thread compile"
-          make -j1 V=s
+          make -j$(nproc) V=s
           echo "COMPILE_STATUS=success" >> $GITHUB_ENV
           grep '^CONFIG_TARGET.*DEVICE.*=y' .config | sed -r 's/.*DEVICE_(.*)=y/\1/' > DEVICE_NAME
           [ -s DEVICE_NAME ] && echo "DEVICE_NAME=_$(cat DEVICE_NAME)" >> $GITHUB_ENV
